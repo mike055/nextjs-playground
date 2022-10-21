@@ -63,3 +63,23 @@ jobs:
       - name: test
         run: |
           npm run test
+
+  local_smoke_test:
+    runs-on: ubuntu-latest
+    needs: build_prepare
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+        with:
+          node-version: 16
+      - name: Restore node_modules
+        uses: actions/cache@v3
+        with:
+          path: node_modules
+          key: node_modules-${{ hashFiles('**/package-lock.json') }}
+      - name: Local smoke test
+        uses: cypress-io/github-action@v2
+        with:
+          build: npm run build
+          start: npm run start
+          wait-on: http://localhost:3000
