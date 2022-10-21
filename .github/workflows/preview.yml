@@ -23,6 +23,8 @@ jobs:
   get_preview_url:
     needs: deploy_preview
     runs-on: ubuntu-latest
+    outputs:
+      preview_url: https://${{ steps.vercel_preview_url.outputs.preview_url }}
     steps:
       - run: sleep 30
       - name: Get Vercel Preview URL
@@ -38,27 +40,31 @@ jobs:
     needs: get_preview_url
     runs-on: ubuntu-latest
     steps:
+      - name: Check Vercel URL
+        run: echo "${{needs.get_preview_url.outputs.preview_url}}"
       - uses: actions/checkout@v3
       - name: Audit preview URL with Lighthouse
         id: lighthouse_audit
         uses: treosh/lighthouse-ci-action@v3
         with:
           urls: |
-            https://${{ steps.vercel_preview_url.outputs.vercel_preview_url }}
-          configPath: './lighthouserc.json'
+            ${{needs.get_preview_url.outputs.preview_url}}
+          configPath: './lighthouserc.js'
           uploadArtifacts: true
           temporaryPublicStorage: true
   test_preview_with_cypress:    
     needs: get_preview_url
     runs-on: ubuntu-latest
     steps:
+      - name: Check Vercel URL
+        run: echo "${{needs.get_preview_url.outputs.preview_url}}"
       - uses: actions/checkout@v3
       - name: Local smoke test
         uses: cypress-io/github-action@v4.2.0
         with:
           spec: cypress/integration/**/*.cy.ts
-          wait-on: https://${{ steps.vercel_preview_url.outputs.vercel_preview_url }}
-          config: baseUrl=https://${{ steps.vercel_preview_url.outputs.vercel_preview_url }}
+          wait-on: ${{needs.get_preview_url.outputs.preview_url}}
+          config: baseUrl=${{needs.get_preview_url.outputs.preview_url}}
       - uses: actions/upload-artifact@v2
         if: failure()
         with:
