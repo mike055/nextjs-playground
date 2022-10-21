@@ -45,3 +45,21 @@ jobs:
       - name: lint & type check
         run: |
           npm run verify
+
+  test:
+    runs-on: ubuntu-latest
+    needs: build_prepare
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+        with:
+          node-version: 16
+      - name: Restore node_modules
+        uses: actions/cache@v3
+        with:
+          path: node_modules
+          key: node_modules-${{ hashFiles('**/package-lock.json') }}
+
+      - name: test
+        run: |
+          npm run test
