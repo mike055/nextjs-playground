@@ -1,0 +1,47 @@
+name: main
+on:
+  push:
+   branches-ignore:
+     - "master"
+env:
+  CYPRESS_CACHE_FOLDER: cypress/cache
+
+jobs:
+  build_prepare:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+        with:
+          node-version: 16
+      - name: Cache node modules
+        uses: actions/cache@v3
+        id: npm-cache
+        with:
+          path: node_modules
+          key: node_modules-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            node_modules-${{ hashFiles('**/package-lock.json') }}
+
+      - name: install dependencies
+        if: steps.npm-cache.outputs.cache-hit != 'true'
+        run: |
+          npm ci
+
+  verify:
+    runs-on: ubuntu-latest
+    needs: build_prepare
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+        with:
+          node-version: 16
+      - name: Restore node_modules
+        uses: actions/cache@v3
+        with:
+          path: node_modules
+          key: node_modules-${{ hashFiles('**/package-lock.json') }}
+
+      - name: lint & type check
+        run: |
+          npm run verify
