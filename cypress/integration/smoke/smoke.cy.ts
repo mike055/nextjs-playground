@@ -13,7 +13,7 @@ context('smoke', () => {
     });
 
     it('should render the heading', () => {
-        cy.contains(/Michael's BlaBla Playground/).should('exist');
+        cy.contains(/Michael's NextJS Playground/).should('exist');
     });
 
     it('should have no a11y violations', () => {
