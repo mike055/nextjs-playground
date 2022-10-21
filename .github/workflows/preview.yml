@@ -8,10 +8,10 @@ on:
     types:
       - completed
 jobs:
-  Deploy-Preview:
+  deploy_preview:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: Install Vercel CLI
         run: npm install --global vercel@canary
       - name: Pull Vercel Environment Information
@@ -20,22 +20,47 @@ jobs:
         run: vercel build --token=${{ secrets.VERCEL_TOKEN }}
       - name: Deploy Project Artifacts to Vercel
         run: vercel deploy --prebuilt --token=${{ secrets.VERCEL_TOKEN }}
+  get_preview_url:
+    needs: deploy_preview
+    runs-on: ubuntu-latest
+    steps:
       - run: sleep 30
-      - name: vercel-preview-url
+      - name: Get Vercel Preview URL
         uses: zentered/vercel-preview-url@v1.0.0
         id: vercel_preview_url
         env:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
         with:
           vercel_project_id: ${{ secrets.VERCEL_PROJECT_ID }}
-      - name: Get URL
+      - name: Output Vercel URL
         run: echo "https://${{ steps.vercel_preview_url.outputs.preview_url }}"
+  test_preview_with_lighthouse:    
+    needs: get_preview_url
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
       - name: Audit preview URL with Lighthouse
         id: lighthouse_audit
         uses: treosh/lighthouse-ci-action@v3
         with:
           urls: |
-            ${{ steps.vercel_preview_url.outputs.vercel_preview_url }}
+            https://${{ steps.vercel_preview_url.outputs.vercel_preview_url }}
           configPath: './lighthouserc.json'
           uploadArtifacts: true
           temporaryPublicStorage: true
+  test_preview_with_cypress:    
+    needs: get_preview_url
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Local smoke test
+        uses: cypress-io/github-action@v4.2.0
+        with:
+          spec: cypress/integration/**/*.cy.ts
+          wait-on: https://${{ steps.vercel_preview_url.outputs.vercel_preview_url }}
+          config: baseUrl=https://${{ steps.vercel_preview_url.outputs.vercel_preview_url }}
+      - uses: actions/upload-artifact@v2
+        if: failure()
+        with:
+          name: cypress-screenshots
+          path: cypress/screenshots
