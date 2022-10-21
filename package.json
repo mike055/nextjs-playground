@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "cypress:ci": "cypress run --spec=cypress/integration/smoke/*.cy.ts",
+    "cypress:ci": "cypress run --spec=cypress/integration/**/*.cy.ts",
     "cypress:open": "cypress open",
     "test": "jest",
     "type-check": "tsc --noEmit",

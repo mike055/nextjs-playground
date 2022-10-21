@@ -80,6 +80,13 @@ jobs:
       - name: Local smoke test
         uses: cypress-io/github-action@v4.2.0
         with:
+          spec: cypress/integration/**/*.cy.ts
           build: npm run build
           start: npm run start
           wait-on: http://localhost:3000
+      - uses: actions/upload-artifact@v2
+        if: failure()
+        with:
+          name: cypress-screenshots
+          path: cypress/screenshots
+          
